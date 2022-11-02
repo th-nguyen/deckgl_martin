@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>deck.gl+Google</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script src="https://unpkg.com/@loaders.gl/csv@3.0.12/dist/dist.min.js"></script>
+    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+    <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
+
+    <script
+        src="https://maps.googleapis.com/maps/api/js?v=beta"></script>
+    <!-- jsFiddle will insert css and js -->
+</head>
+
+<body>
+    <div id="map"></div>
+</body>
+<script>
+    const DATA_URL =
+        'https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/3d-heatmap/heatmap-data.csv';
+
+    let map;
+    const onViewportLoad = tiles => {
+        tiles.forEach(tile => {
+            // data in world coordinates (WGS84)
+            const dataInWGS84 = tile.dataInWGS84;
+        });
+    };
+    function addLineStyle(url) {
+        const style = {
+            id: url,
+            data: url,
+            filled: true,
+            autoHighlight: true,
+            stroked: true,
+            pointType: "point",
+            getLineColor: [0, 0, 255, 255],
+            lineWidthMinPixels: 4,
+            onViewportLoad
+        }
+        return style;
+
+    }
+    function addPointStyle(url, icon, text, minZoom, maxZoom) {
+        const iconPos = {
+            url: icon,
+            x: 0,
+            y: 0,
+            width: 30, //アイコン画像の横幅
+            height: 30, //アイコン画像の縦幅
+            mask: false, //tureにするとアイコン画像の色の上塗りなどが可能になる
+        };
+        const style = {
+            id: url,
+            data: url,
+            filled: true,
+            onViewportLoad,
+            minZoom: minZoom,
+            maxZoom: maxZoom,
+            autoHighlight: true,
+            pointType: "icon+text",
+            getIcon: (d) => {
+                return iconPos;
+            },
+            getText: (d) => {
+                return d["properties"][text].length > 0 ? d["properties"][text] : "＊＊設定なし";
+            },
+            getTextPixelOffset: [20, 20],
+            getTextAnchor: "start",
+            getTextColor: [255, 255, 255, 255],
+            textFontWeight: 500,
+            textSizeScale: 0.5,
+            textOutlineColor: [0, 0, 255, 255],
+            textOutlineWidth: 0.5,
+            textCharacterSet: "auto",
+            // fontFamily: 'Material Icons',
+            textFontSettings: {
+                sdf: true,
+            },
+            iconSizeScale: 15,
+        }
+        return style;
+
+    }
+    // Initialize and add the map
+    function initMap() {
+        map = new google.maps.Map(
+            document.getElementById("map"),
+            {
+                center: { lat: 34.7341612, lng: 135.5008135 },
+                zoom: 14,
+            }
+        );
+ 
+        var layers = []
+
+
+        const commonlineurl = "http://113.37.135.185/tiles/public.commonline/{z}/{x}/{y}.pbf"
+        const commonlinelayer = new deck.MVTLayer(
+            addLineStyle(commonlineurl)
+        );
+        layers.push(commonlinelayer)
+
+        const shinkansenlineurl = "http://113.37.135.185/tiles/public.shinkansenline/{z}/{x}/{y}.pbf"
+        const shinkansenlayer = new deck.MVTLayer(
+            addLineStyle(shinkansenlineurl)
+        );
+        layers.push(shinkansenlayer)
+
+        const pointLayers = [
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAAAA/////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIZlIFpl40MggwqzenubRq7D4biM0LgInxLAQA7',
+                url: 'http://113.37.135.185/tiles/public.commoneki/{z}/{x}/{y}.pbf',
+                disp: 'disp_name',
+                minZoom: 10,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAAAA/////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIklI8ZwBDJglzgLBqdcW7yfXkL2EmfwE1XJazNdUQeazVagh8FADs=',
+                url: 'http://113.37.135.185/tiles/public.commonkirokm/{z}/{x}/{y}.pbf',
+                disp: 'label',
+                minZoom: 12,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAAAA/////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIglI8ZwBDJglzgrDmdcTjv7gkcWImgVF6dto2U0rDJbBQAOw==',
+                url: 'http://113.37.135.185/tiles/public.commonkiro100m/{z}/{x}/{y}.pbf',
+                disp: 'label',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAP9mM////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIilBWgCyfMTgKhqiCvbWdtjmgTZnhbRn2deK3VaUwQOLdGAQA7',
+                url: 'http://113.37.135.185/tiles/public.commonfumikiri/{z}/{x}/{y}.pbf',
+                disp: 'fumikiri_n',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAADOZM////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIbhI+pGu0ZgIvxNEmreVj3fVkZhmSX13HLygIFADs=',
+                url: 'http://113.37.135.185/tiles/public.commonbashi/{z}/{x}/{y}.pbf',
+                disp: 'bridge_nam',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAADOZM////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIclI+pGuAQUHs0ijqdmKF7l3kfJnZkeYrUyrZUAQA7',
+                url: 'http://113.37.135.185/tiles/public.commontonel/{z}/{x}/{y}.pbf',
+                disp: 'tunnel_nam',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAP9mM////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIglAMJYae/zAtIiboo3nlBnYCKKI4dF5bMhAENZDXX1BQAOw==',
+                url: 'http://113.37.135.185/tiles/public.commonshingo/{z}/{x}/{y}.pbf',
+                disp: 'name1',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAAAA/////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIZlIFpl40MggwqzenubRq7D4biM0LgInxLAQA7',
+                url: 'http://113.37.135.185/tiles/public.shinkanseneki/{z}/{x}/{y}.pbf',
+                disp: 'disp_name',
+                minZoom: 10,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAAAA/////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIklI8ZwBDJglzgLBqdcW7yfXkL2EmfwE1XJazNdUQeazVagh8FADs=',
+                url: 'http://113.37.135.185/tiles/public.shinkansenkirokm/{z}/{x}/{y}.pbf',
+                disp: 'label',
+                minZoom: 12,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAAAAA/////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIglI8ZwBDJglzgrDmdcTjv7gkcWImgVF6dto2U0rDJbBQAOw==',
+                url: 'http://113.37.135.185/tiles/public.shinkansenkiro100m/{z}/{x}/{y}.pbf',
+                disp: 'label',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAADOZM////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIbhI+pGu0ZgIvxNEmreVj3fVkZhmSX13HLygIFADs=',
+                url: 'http://113.37.135.185/tiles/public.shinkansenbashi/{z}/{x}/{y}.pbf',
+                disp: 'bridge_nam',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+            {
+                icon: 'data:image/gif;base64,R0lGODlhDAAMAJEAADOZM////////wAAACH5BAUUAAIALAAAAAAMAAwAAAIclI+pGuAQUHs0ijqdmKF7l3kfJnZkeYrUyrZUAQA7',
+                url: 'http://113.37.135.185/tiles/public.shinkansentonel/{z}/{x}/{y}.pbf',
+                disp: 'tunnel_nam',
+                minZoom: 14,
+                maxZoom: 24,
+            },
+        ]
+        pointLayers.forEach(element => {
+            const layer = new deck.MVTLayer(addPointStyle(element.url, element.icon, element.disp, element.minZoom, element.maxZoom));
+            layers.push(layer)
+        });
+
+        // layers.forEach(element => {
+
+        // });
+        const deckOverlay = new deck.GoogleMapsOverlay({
+            layers: [
+                layers
+            ],
+        });
+        // deckOverlay._deck.redraw(true);
+        deckOverlay.setMap(map);
+
+    }
+
+
+    initMap();
+
+</script>
+<style>
+    #map {
+        height: 100%;
+    }
+
+    /* Optional: Makes the sample page fill the window. */
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+</style>
+
+</html>
